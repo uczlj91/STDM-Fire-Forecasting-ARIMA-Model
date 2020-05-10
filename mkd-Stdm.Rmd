@@ -1,0 +1,315 @@
+---
+title: "STARIMA"
+author: "Jianing Wu"
+date: "19/04/2020"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup}
+setwd('C:/Users/13581/Downloads/STDM/data1')
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r implement libraries}
+library(sp)
+library(rgdal)
+library(tmap)
+library(RColorBrewer)
+library(latex2exp)
+library(grid)
+library(reshape2)
+library(forecast)
+library(dse)
+library(seastests)
+library(ggplot2)
+library(forecast)
+library(fpp2)
+library(gridExtra)
+
+source("starima_package.R")
+
+```
+
+
+```{r read csv data file}
+
+aus_burn <- read.csv(file = "aus_burnt.csv")
+
+
+```
+
+## Plots for each state
+
+```{r plot}
+pau_q<-plot(aus_burn$Q,ylab="Monthly burnt area", xlab ="Time (in months)",type="l")
+pau_nt<-plot(aus_burn$NT,ylab="Monthly burnt area", xlab ="Time (in months)",type="l")
+pau_sa<-plot(aus_burn$SA,ylab="Monthly burnt area", xlab ="Time (in months)",type="l")
+pau_t<-plot(aus_burn$T,ylab="Monthly burnt area", xlab ="Time (in months)",type="l")
+pau_v<-plot(aus_burn$V,ylab="Monthly burnt area", xlab ="Time (in months)",type="l")
+pau_wa<-plot(aus_burn$WA,ylab="Monthly burnt area", xlab ="Time (in months)",type="l")
+pau_nsw<-plot(aus_burn$NSW,ylab="Monthly burnt area", xlab ="Time (in months)",type="l")
+
+```
+
+
+```{r pressure, echo=FALSE}
+lag.plot(aus_burn$NT, lags=12, do.lines=FALSE,main = "North Territory")
+lag.plot(aus_burn$Q, lags=12, do.lines=FALSE,main = "Queensland")
+lag.plot(aus_burn$SA, lags=12, do.lines=FALSE,main = "South Australia")
+lag.plot(aus_burn$T, lags=12, do.lines=FALSE, main = "Tasmania")
+lag.plot(aus_burn$V, lags=12, do.lines=FALSE, main = "Victoria")
+lag.plot(aus_burn$WA, lags=12, do.lines=FALSE, main = "Western Australia")
+lag.plot(aus_burn$NSW, lags=12, do.lines=FALSE, main = "New South Wales")
+```
+
+
+
+```{r ACF for each state}
+acf(aus_burn$Q, lag.max=36, xlab="Lag", ylab="ACF",main = "Queensland")
+acf(aus_burn$NT, lag.max=36, xlab="Lag", ylab="ACF",main = "North Territory")
+acf(aus_burn$SA, lag.max=36, xlab="Lag", ylab="ACF",main="South Australia")
+acf(aus_burn$T, lag.max=36, xlab="Lag", ylab="ACF",main="Tasmania")
+acf(aus_burn$V, lag.max=36, xlab="Lag", ylab="ACF",main="Victoria")
+acf(aus_burn$WA, lag.max=36, xlab="Lag", ylab="ACF",main="Western Australia")
+acf(aus_burn$NSW, lag.max=36, xlab="Lag", ylab="ACF",main="New South Wales")
+
+
+
+```
+
+
+
+```{r diff ACF}
+aus_burn.diff.Q <- diff(aus_burn$Q, lag=12, differences=1)
+acf(aus_burn.diff.Q, lag.max=36, xlab="Lag", ylab="ACF",main="Differenced autocorrelation plot")
+
+aus_burn.diff.NT <- diff(aus_burn$NT, lag=12, differences=1)
+acf(aus_burn.diff.NT, lag.max=36, xlab="Lag", ylab="ACF",main="Differenced autocorrelation plot")
+
+aus_burn.diff.SA <- diff(aus_burn$SA, lag=12, differences=1)
+acf(aus_burn.diff.SA, lag.max=36, xlab="Lag", ylab="ACF",main="Differenced autocorrelation plot")
+
+aus_burn.diff.T <- diff(aus_burn$T, lag=12, differences=1)
+acf(aus_burn.diff.T, lag.max=36, xlab="Lag", ylab="ACF",main="Differenced autocorrelation plot")
+
+aus_burn.diff.V <- diff(aus_burn$V, lag=12, differences=1)
+acf(aus_burn.diff.V, lag.max=36, xlab="Lag", ylab="ACF",main="Differenced autocorrelation plot")
+
+aus_burn.diff.WA <- diff(aus_burn$WA, lag=12, differences=1)
+acf(aus_burn.diff.WA, lag.max=36, xlab="Lag", ylab="ACF",main="Differenced autocorrelation plot")
+
+aus_burn.diff.NSW <- diff(aus_burn$NSW, lag=12, differences=1)
+acf(aus_burn.diff.NSW, lag.max=36, xlab="Lag", ylab="ACF",main="Differenced autocorrelation plot")
+
+```
+
+```{r PACF}
+pacf(aus_burn$Q,lag.max=36,xlab="Lag",ylab="PACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn$NT, lag.max=36,xlab="Lag",ylab="PACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn$SA, lag.max=36,xlab="Lag",ylab="PACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn$T, lag.max=36,xlab="Lag",ylab="PACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn$V, lag.max=36,xlab="Lag",ylab="PACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn$WA, lag.max=36,xlab="Lag",ylab="PACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn$NSW, lag.max=36,xlab="Lag",ylab="PACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+
+```
+```{r diff PACF}
+pacf(aus_burn.diff.Q,lag.max=36,xlab="Lag",ylab="ACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn.diff.NT,lag.max=36,xlab="Lag",ylab="ACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn.diff.SA,lag.max=36,xlab="Lag",ylab="ACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn.diff.T,lag.max=36,xlab="Lag",ylab="ACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn.diff.V,lag.max=36,xlab="Lag",ylab="ACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn.diff.WA,lag.max=36,xlab="Lag",ylab="ACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+pacf(aus_burn.diff.NSW,lag.max=36,xlab="Lag",ylab="ACF",main="Partial Autocorrelation plot of monthly average temperatures")
+
+```
+
+```{r fit Q NT SA}
+fit.aus.Q <- arima(aus_burn$Q[1:182],order=c(1,0,2),seasonal=list(order=c(1,1,0),period=12))
+res_aus_Q <- fit.aus.Q$residuals
+NRMSE_fit_Q <- NRMSE(res=fit.aus.Q$residuals,obs=aus_burn$Q[1:182])
+
+fit.aus.NT <- arima(aus_burn$NT[1:182],order=c(1,0,2),seasonal=list(order=c(1,1,0),period=12))
+res_aus_NT <- fit.aus.NT$residuals
+NRMSE_fit_NT <- NRMSE(res=fit.aus.NT$residuals,obs=aus_burn$NT[1:182])
+
+fit.aus.SA <- arima(aus_burn$SA[1:182],order=c(1,0,2),seasonal=list(order=c(1,1,0),period=12))
+res_aus_SA <- fit.aus.SA$residuals
+NRMSE_fit_SA <- NRMSE(res=fit.aus.SA$residuals,obs=aus_burn$SA[1:182])
+```
+
+
+```{r fit T V WA NSW}
+fit.aus.T <- arima(aus_burn$T[1:182],order=c(1,0,2),seasonal=list(order=c(1,1,0),period=12))
+res_aus_T <- fit.aus.T$residuals
+NRMSE_fit_T <- NRMSE(res=fit.aus.T$residuals,obs=aus_burn$T[1:182])
+
+fit.aus.V <- arima(aus_burn$V[1:182],order=c(1,0,2),seasonal=list(order=c(1,1,0),period=12))
+res_aus_V <- fit.aus.V$residuals
+NRMSE_fit_V <- NRMSE(res=fit.aus.V$residuals,obs=aus_burn$V[1:182])
+
+fit.aus.WA <- arima(aus_burn$WA[1:182],order=c(1,0,2),seasonal=list(order=c(1,1,0),period=12))
+res_aus_WA <- fit.aus.WA$residuals
+NRMSE_fit_WA <- NRMSE(res=fit.aus.WA$residuals,obs=aus_burn$WA[1:182])
+
+fit.aus.NSW <- arima(aus_burn$NSW[1:182],order=c(1,0,2),seasonal=list(order=c(1,1,0),period=12))
+res_aus_NSW <- fit.aus.NSW$residuals
+NRMSE_fit_NSW <- NRMSE(res=fit.aus.NSW$residuals,obs=aus_burn$NSW[1:182])
+```
+
+```{r diagnostic checking}
+tsdiag(fit.aus.Q)
+tsdiag(fit.aus.NT)
+tsdiag(fit.aus.SA)
+tsdiag(fit.aus.T)
+tsdiag(fit.aus.V)
+tsdiag(fit.aus.WA)
+tsdiag(fit.aus.NSW)
+
+
+```
+```{r residual histograms}
+hist(fit.aus.Q$residuals,main = "Queensland", xlab = "Residual" )
+hist(fit.aus.NT$residuals,main = "North Territory", xlab = "Residual" )
+hist(fit.aus.SA$residuals,main = "South Australia", xlab = "Residual" )
+hist(fit.aus.T$residuals,main = "Tasmania", xlab = "Residual" )
+hist(fit.aus.V$residuals,main = "Victoria", xlab = "Residual" )
+hist(fit.aus.WA$residuals,main = "Western Australia", xlab = "Residual" )
+hist(fit.aus.NSW$residuals,main = "New South Wales", xlab = "Residual" )
+```
+
+
+```{r box test}
+Box.test(fit.aus.Q$residuals,lag=3)
+Box.test(fit.aus.NT$residuals,lag=3)
+Box.test(fit.aus.SA$residuals,lag=3)
+Box.test(fit.aus.T$residuals,lag=3)
+Box.test(fit.aus.V$residuals,lag=3)
+Box.test(fit.aus.WA$residuals,lag=3)
+Box.test(fit.aus.NSW$residuals,lag=3)
+
+```
+```{r predict 12 lags ahead}
+pre.aus.Q<-predict(fit.aus.Q, n.ahead=12)
+matplot(1:12,cbind(aus_burn$Q[183:194],pre.aus.Q$pred),type="l",main="ARIMA prediction effect (Queensland)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.NT<-predict(fit.aus.NT, n.ahead=12)
+matplot(1:12,cbind(aus_burn$NT[183:194],pre.aus.NT$pred),type="l",main="ARIMA prediction effect (North Territory)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.SA<-predict(fit.aus.SA, n.ahead=12)
+matplot(1:12,cbind(aus_burn$SA[183:194],pre.aus.SA$pred),type="l",main="ARIMA prediction effect (South Australia)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.T<-predict(fit.aus.T, n.ahead=12)
+matplot(1:12,cbind(aus_burn$T[183:194],pre.aus.T$pred),type="l",main="ARIMA prediction effect (Tasmania)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.V<-predict(fit.aus.V, n.ahead=12)
+matplot(1:12,cbind(aus_burn$V[183:194],pre.aus.V$pred),type="l",main="ARIMA prediction effect (Victoria)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.WA<-predict(fit.aus.WA, n.ahead=12)
+matplot(1:12,cbind(aus_burn$WA[183:194],pre.aus.WA$pred),type="l",main="ARIMA prediction effect (Western Australia)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.NSW<-predict(fit.aus.NSW, n.ahead=12)
+matplot(1:12,cbind(aus_burn$NSW[183:194],pre.aus.NSW$pred),type="l",main="ARIMA prediction effect (New South Wales)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+
+```
+```{r predict 48 lag}
+pre.aus.Q<-predict(fit.aus.Q, n.ahead=48)
+matplot(1:48,cbind(aus_burn$Q[183:230],pre.aus.Q$pred),type="l",main="ARIMA prediction effect (Queensland)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.NT<-predict(fit.aus.NT, n.ahead=48)
+matplot(1:48,cbind(aus_burn$NT[183:230],pre.aus.NT$pred),type="l",main="ARIMA prediction effect (North Territory)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.SA<-predict(fit.aus.SA, n.ahead=48)
+matplot(1:48,cbind(aus_burn$SA[183:230],pre.aus.SA$pred),type="l",main="ARIMA prediction effect (South Australia)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.T<-predict(fit.aus.T, n.ahead=48)
+matplot(1:48,cbind(aus_burn$T[183:230],pre.aus.T$pred),type="l",main="ARIMA prediction effect (Tasmania)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.V<-predict(fit.aus.V, n.ahead=48)
+matplot(1:48,cbind(aus_burn$V[183:230],pre.aus.V$pred),type="l",main="ARIMA prediction effect (Victoria)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.WA<-predict(fit.aus.WA, n.ahead=48)
+matplot(1:48,cbind(aus_burn$WA[183:230],pre.aus.WA$pred),type="l",main="ARIMA prediction effect (Western Australia)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+pre.aus.NSW<-predict(fit.aus.NSW, n.ahead=48)
+matplot(1:48,cbind(aus_burn$NSW[183:230],pre.aus.NSW$pred),type="l",main="ARIMA prediction effect (New South Wales)",xlab = "Time (in months)",ylab = "Monthly burnt area")
+
+
+```
+```{r NMSE}
+##Qmtx <- as.matrix(read.table(file="w.csv", header=TRUE, sep=","))
+aus.matQ <- as.matrix(aus_burn$Q)
+aus.matNT <- as.matrix(aus_burn$NT)
+aus.matSA <- as.matrix(aus_burn$SA)
+aus.matT <- as.matrix(aus_burn$T)
+aus.matV <- as.matrix(aus_burn$V)
+aus.matWA <- as.matrix(aus_burn$WA)
+aus.matNSW <- as.matrix(aus_burn$NSW)
+
+# modelled matrix
+pre.matQ <- as.matrix(pre.aus.Q)
+
+
+```
+
+
+
+```{r nmse for forecasting}
+# sum((y1-y2)^2)/((sd(y1)^2)*length(y1))
+# y1 is an array of observed burned areas
+# y2 is an array of modelled burned areas
+yq1<-aus_burn$Q[183:230]
+yq2<-pre.aus.Q$pred
+nmse.Q <- sum((yq1-yq2)^2)/((sd(yq1)^2)*length(yq1))
+
+ynt1 <- aus_burn$NT[183:230]
+ynt2 <-pre.aus.NT$pred
+nmse.NT <- sum((ynt1-ynt2)^2)/((sd(ynt1)^2)*length(ynt1))
+
+ysa1 <- aus_burn$SA[183:230]
+ysa2 <-pre.aus.SA$pred
+nmse.SA <- sum((ysa1-ysa2)^2)/((sd(ysa1)^2)*length(ysa1))
+
+
+yt1 <- aus_burn$T[183:230]
+yt2 <-pre.aus.T$pred
+nmse.T <- sum((yt1-yt2)^2)/((sd(yt1)^2)*length(yt1))
+
+yv1 <- aus_burn$V[183:230]
+yv2 <-pre.aus.V$pred
+nmse.V <- sum((yv1-yv2)^2)/((sd(yv1)^2)*length(yv1))
+
+ywa1 <- aus_burn$WA[183:230]
+ywa2 <-pre.aus.WA$pred
+nmse.WA <- sum((ywa1-ywa2)^2)/((sd(ywa1)^2)*length(ywa1))
+
+ynsw1 <- aus_burn$NSW[183:230]
+ynsw2 <-pre.aus.NSW$pred
+nmse.NSW <- sum((ynsw1-ynsw2)^2)/((sd(ynsw1)^2)*length(ynsw1))
+
+
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
